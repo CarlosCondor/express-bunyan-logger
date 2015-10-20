@@ -95,7 +95,7 @@ module.exports.errorLogger = function (opts) {
                 httpVersion = req.httpVersionMajor + '.' + req.httpVersionMinor,
                 hrtime = process.hrtime(startTime),
                 responseTime = hrtime[0] * 1e3 + hrtime[1] / 1e6,
-                ip, logFn;
+                ip, logFn, userId, userEmail;
 
             var level = levelFn(status, err);
             logFn = childLogger[level] ? childLogger[level] : childLogger.info;
@@ -104,8 +104,15 @@ module.exports.errorLogger = function (opts) {
                 (req.socket && req.socket.remoteAddress) ||
                 (req.socket.socket && req.socket.socket.remoteAddress) ||
                 '127.0.0.1';
-
+            
+            if (req.user) {
+                userId = req.user._id;
+                userEmail = req.user.email;
+            };
+            
             var meta = {
+                'user-id': userId,
+                'user-email': userEmail,
                 'remote-address': ip,
                 'ip': ip,
                 'method': method,
