@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/villadora/express-bunyan-logger.git"
+    "url": "https://github.com/CarlosCondor/express-bunyan-logger.git"
   },
   "keywords": [
     "express",
@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "bunyan": "^1.0.0",
+    "lodash": "^4.14.2",
     "node-uuid": "^1.4.1",
     "useragent": "^2.0.9"
   },
@@ -37,7 +38,8 @@
     "Wei Gao <jky239@gmail.com>",
     "Paris Holley <mail@parisholley.com>",
     "Ognian Tschakalov <ognian.tschakalov@ogi-it.com>",
-    "Simon Wade <simon.wade@gmail.com>"
+    "Simon Wade <simon.wade@gmail.com>",
+    "Juan Carlos Delgado <jcdelgado@gmail.com>"
   ],
   "license": "BSD"
 }
