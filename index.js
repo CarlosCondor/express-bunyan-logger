@@ -1,7 +1,8 @@
 var bunyan = require('bunyan'),
     useragent = require('useragent'),
     uuid = require('node-uuid'),
-    util = require('util');
+    util = require('util'),
+    _ = require('lodash');
 
 
 module.exports = function (opts) {
@@ -19,13 +20,19 @@ module.exports.errorLogger = function (opts) {
         excludes,
         genReqId = defaultGenReqId,
         levelFn = defaultLevelFn,
-        includesFn;
+        includesFn,
+        sensitiveKeys = [];
 
     if (opts.logger) {
       logger = opts.logger;
     }
 
-    // default format 
+    if (opts.sensitiveKeys) {
+      sensitiveKeys = opts.sensitiveKeys;
+    }
+    delete opts.sensitiveKeys; // don't pass it to bunyan
+
+    // default format
     format = opts.format || ":remote-address :incoming :method :url HTTP/:http-version :status-code :res-headers[content-length] :referer :user-agent[family] :user-agent[major].:user-agent[minor] :user-agent[os] :response-time ms";
     delete opts.format; // don't pass it to bunyan
     (typeof format != 'function') && (format = compile(format));
@@ -75,7 +82,7 @@ module.exports.errorLogger = function (opts) {
 
         var requestId;
 
-        if (genReqId) 
+        if (genReqId)
           requestId = genReqId(req);
 
         var childLogger = requestId !== undefined ? logger.child({req_id: requestId}) : logger;
@@ -104,12 +111,12 @@ module.exports.errorLogger = function (opts) {
                 (req.socket && req.socket.remoteAddress) ||
                 (req.socket.socket && req.socket.socket.remoteAddress) ||
                 '127.0.0.1';
-            
+
             if (req.user) {
                 userId = req.user._id;
                 userEmail = req.user.email;
-            };
-            
+            }
+
             var meta = {
                 'user-id': userId,
                 'user-email': userEmail,
@@ -119,7 +126,7 @@ module.exports.errorLogger = function (opts) {
                 'url': url,
                 'referer': referer,
                 'user-agent': ua,
-                'body': req.body,
+                'body': deepMaskSensitiveKeys(req.body, sensitiveKeys),
                 'short-body': util.inspect(req.body).substring(0, 20),
                 'http-version': httpVersion,
                 'response-time': responseTime,
@@ -143,8 +150,8 @@ module.exports.errorLogger = function (opts) {
                     excludes.forEach(function(ex) {
                         exs[ex] = true;
                     });
-                  
-                    for (var p in meta) 
+
+                    for (var p in meta)
                         if (!exs[p])
                           json[p] = meta[p];
                 }
@@ -206,4 +213,30 @@ function defaultGenReqId(req) {
   var requestId = uuid.v4();
   req.id = requestId;
   return requestId;
+}
+
+/**
+ *    Deep mask keys
+ **/
+function deepMaskSensitiveKeys (obj, key) {
+  var keys = [];
+  if (Array.isArray(key)) {
+    keys = key;
+  } else {
+    keys = [key];
+  }
+
+  keys.forEach(function (key) {
+    if (_.has(obj, key)) {
+      obj[key] = "****";
+      return;
+    }
+
+    var res = [];
+    _.forEach(obj, function(v) {
+      if (typeof v == "object" && (v = deepMaskSensitiveKeys(v, key)).length);
+      v = "****";
+    });
+  });
+  return obj;
 }
