@@ -220,22 +220,27 @@ function defaultGenReqId(req) {
  **/
 function deepMaskSensitiveKeys (obj, key) {
   var keys = [];
+
+  if (!key) return obj;
+  
+  // normalize to array
   if (Array.isArray(key)) {
     keys = key;
   } else {
     keys = [key];
   }
 
+  // for each key to mask
   keys.forEach(function (key) {
     if (_.has(obj, key)) {
       obj[key] = "****";
-      return;
     }
 
-    var res = [];
+    // if object, recursive call to mask
     _.forEach(obj, function(v) {
-      if (typeof v == "object" && (v = deepMaskSensitiveKeys(v, key)).length);
-      v = "****";
+      if (typeof v == "object") {
+        v = deepMaskSensitiveKeys(v, key);
+      }
     });
   });
   return obj;
